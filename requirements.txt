@@ -1,0 +1,25 @@
+# ============================================================
+#  idphoto_app 依赖清单
+#  安装： pip install -r requirements.txt
+#  国内镜像：
+#    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+#    pip install -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
+# ============================================================
+
+# ---- 核心运行时（必选）----
+numpy>=1.21.0
+opencv-python-headless>=4.5.0      # headless 版，避免其自带 Qt 与 PySide6 的 Qt 冲突（界面只用 PySide6）
+onnxruntime>=1.15.0
+Pillow>=9.0.0
+
+# ---- GUI：Qt 绑定 + Fluent 风格组件（必选）----
+# pyside6-fluent-widgets 会一并拉取兼容版本的 PySide6 与 qfluentwidgets，
+# 提供 PySide6 版的 Fluent 控件（代码中 import 名仍为 qfluentwidgets）。
+# 这里显式声明 PySide6，便于版本可复现与排查。
+PySide6>=6.4.0
+pyside6-fluent-widgets
+
+# ---- 可选：MTCNN 人脸检测 ----
+# 仅当在「人脸检测模型」中选择 MTCNN 时才需要；不选 RetinaFace 之外的模型则无需安装。
+# 安装后首次选择 MTCNN，mtcnn-runtime 会自动下载其权重（约数 MB）。
+mtcnn-runtime>=1.0.0

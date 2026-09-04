@@ -1,0 +1,40 @@
+# ============================================================
+#  idphoto_app 开源仓库 .gitignore
+# ============================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+venv/
+.venv/
+env/
+.python-version
+
+# ---- 模型权重（体积大，运行时按需下载，不入库）----
+*.onnx
+*.pt
+*.pth
+weights/
+model/*.onnx
+
+# ---- 运行时本地状态 / 个人配置 ----
+settings.json
+*.log
+run_bat.log
+*.tmp
+
+# ---- IDE / 编辑器 ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- 操作系统 ----
+Thumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,49 @@
+{
+  "mirrors": [],
+  "manifest": {
+    "modnet_photographic_portrait_matting": {
+      "filename": "modnet_photographic_portrait_matting.onnx",
+      "original": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/modnet_photographic_portrait_matting.onnx",
+      "mirror": "https://hf-mirror.com/DavG25/modnet-pretrained-models/resolve/main/models/modnet_photographic_portrait_matting.onnx"
+    },
+    "hivision_modnet": {
+      "filename": "hivision_modnet.onnx",
+      "original": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/hivision_modnet.onnx",
+      "mirror": "https://hf-mirror.com/xiaofennuonuo/comfyui/resolve/main/hivision_modnet.onnx"
+    },
+    "rmbg-1.4": {
+      "filename": "rmbg-1.4.onnx",
+      "original": "https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx?download=true",
+      "mirror": "https://hf-mirror.com/briaai/RMBG-1.4/resolve/main/onnx/model.onnx"
+    },
+    "birefnet-v1-lite": {
+      "filename": "birefnet-v1-lite.onnx",
+      "original": "https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx",
+      "mirror": "https://hf-mirror.com/EmmaJohnson311/TensorRT-ONNX-collect/resolve/main/BiRefNet-v2-onnx/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx"
+    },
+    "retinaface-resnet50": {
+      "filename": "retinaface-resnet50.onnx",
+      "original": "https://github.com/Zeyi-Lin/HivisionIDPhotos/releases/download/pretrained-model/retinaface-resnet50.onnx",
+      "mirror": "https://hf-mirror.com/TheEeeeLin/HivisionIDPhotos_matting/resolve/main/retinaface-resnet50.onnx"
+    }
+  },
+  "preferred_source": "mirror",
+  "default_timeout": 120,
+  "highspeed_downloads": {
+    "v": 1,
+    "kdf": {
+      "algo": "pbkdf2-sha256",
+      "iters": 200000,
+      "salt": "MZKhLcUbwcT24KzUpNUYSw=="
+    },
+    "cipher": {
+      "algo": "sha256ctr",
+      "nonce": "986bv+dgnrQJoIhr"
+    },
+    "mac": {
+      "algo": "hmac-sha256",
+      "tag": "XdlYe85hj7GtSwFKrP/39L9Ie9JTfQVbOSRZy/xcG1w="
+    },
+    "data": "5STG+HRrrVGmamujGwAQa7MHwXZusoTf8t6CeYCkDhjcpdMdlkPytwAq3lLEkO53wTbWRG/EQ/fTcvy4A3JEUWpKjIH3ewfmtZotFfnX4NDNKtGgzzV/8ttIBh+Wa5QD1bWuuhRNcLsPYbMcOsVqdHLTVWo53LL6lmzeeFxvyyGmUlTmagIuiAQ4j50NLqE7kJgEoo8c1Ui5gAXpjvTN5Hi/Dn8ofLvLSGUp3hKm0jaGY5UNx8PnB5Z7dTvLXfuGcIvqIt7AYCodX24CBER8K86RjHQ2/bB50AdOZYaCx5rZmv+DRks13v+SK3p2CT2YanI0cGmu0uPJn2Qp1QvbL3rgIMnhZDIkN/67y5Z9iruJGUZ7sJGBKhrZjrl+ySUAry9PP5/r496B8sPcVx02MD9FtQuXGdxqXQhuKPTy1LW2PVsR/YODab0D9Wl/2/3IlEWx37RcvAJqGcwgLrTu53u3BR7Xhf3NGCsDUv098JBGs0gFNSy14l6dYgQfzMuAf8SRj28fv2PQCkx2kth6ZS4OnQ/yzS7EDLZjzwJ8QdAoq56Q9NCDApesAEZlPeVdvmX+9avv3qDmaHCu630jvhHceNruGJtmnklbMnsYrmT938/vihzAtZXb7egBMPIhlRP3tk9DHZJI9I3w1GjSG9OWGrfLrRH++8glWViTSMI8zexfErNglEkRbwFSsmVzp71dRrpe6Py3Q1TScRJQxBTc8C6ll1IHE7qr+rIW/If5GPvusqLsdQU4o/64falbCXAi03zQA1WufsfExpb1zLnk0Zq6Ux0vBfrzhT/nNSC4A9eIvcbrPs3RK+xw80cO4G1BPdSVn6Nw9eOTuGOjpROP8+MUfNkRZxXKrEAlxXvlFmMAlahn3uHYD6E+g8/IOR+tZeqUDd0+VEnJ4JL3UD71YY91s9vcYQu8HDgqh1OOA/I2TDtATy4+ftxecmW7WUTdSLe+jCE2z/1esBMN8DTwFpJ4YoSXqWt2EFzxbYLeDqs0xTSMkE50uCGLSY76rI4SA1ZAc6ZGuVMWXExfKPFnjjyMgnnoqHEZh0buTWAmT2ELPLV/7NkyuWtIwztE8LoweTxNgS6FXYPtHyxWov8iJfpsNmxA3eXOie0kPZA91WW6PZGuqFFZYe3n7QOC+CpuoOs74fI/Obprc0Zp3epgzWEzw/0Uva1RmFv9l2k2w8WHCYn0BUZCT48ATp30x6EpiSDj0jlEsM17T6GmelDwCeDs3Ky9TUtNFrjYffm39DacQOuvKGdVtoon3hKMepzDWM/fcmDwQt3q7DhA+FC8eYDyxHVs0uyyOSHo12iPXyHgNT6FMuHMDVpn85jLK0ccnPOx2zAs80NIWQB7RLpZ/N3rrXiUfFqIFE2YNw3VGqE7kO4u1vH7arQPdMMCZWeVETpR"
+  }
+}
