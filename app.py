@@ -1680,9 +1680,9 @@ class IDPhotoApp(QMainWindow):
     def _open_source_link(self):
         """打开本项目开源仓库（默认 GitHub 地址，可在设置中覆盖）。"""
         url = self._settings.get("appearance.open_source_url",
-                                 "https://github.com/jintianjie/HivisionIDPhotos")
+                                 "https://github.com/jintianjie/idphoto_app")
         if not url:
-            url = "https://github.com/jintianjie/HivisionIDPhotos"
+            url = "https://github.com/jintianjie/idphoto_app"
         QDesktopServices.openUrl(QUrl(url))
 
     def _open_mirror_dialog(self):

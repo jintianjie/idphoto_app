@@ -3,6 +3,8 @@
 > 一款**本地离线**运行的证件照制作软件，支持人像智能抠图、换底色、美颜、水印、标准/高清/透明底导出，以及 A4 多尺寸混排与一键打印。
 >
 > 基于开源项目 [HivisionIDPhotos](https://github.com/Zeyi-Lin/HivisionIDPhotos) 的算法思想二次开发，使用 **PySide6 + PyQt-Fluent-Widgets** 重写了现代化桌面界面，并对核心处理流水线做了独立验证与增强。
+>
+> 🔗 本项目开源地址：**https://github.com/jintianjie/idphoto_app**（免安装版见 [Releases](https://github.com/jintianjie/idphoto_app/releases)）
 
 ---
 
@@ -45,6 +47,33 @@
 - 💾 **灵活导出**：标准照 / 高清照 / 透明底抠图，支持 PNG / JPG；可设 **DPI（300/600）** 与 **KB 体积限制**（JPEG 自动压缩到目标大小）。
 - ⬇️ **模型自动下载**：设置内一键检查并下载缺失模型，支持 **加速镜像源（hf-mirror）** 与 **原地址（GitHub/HuggingFace）** 双源自动回退；国内网络友好。
 - 🎛️ **现代化 Fluent 界面**：深色主题、启动加载页、参数化布局常量，界面与业务逻辑严格分离。
+
+---
+
+## 📥 免安装版（GitHub Release）
+
+不想装 Python 环境的用户，直接下载 **Releases** 页面提供的压缩包即可使用：
+
+1. 打开本项目的 [Releases](https://github.com/jintianjie/idphoto_app/releases) 页面，下载最新版的 `idphoto_app_dist.zip`（约 110 MB）。
+2. **右键 → 全部解压缩**，解压到任意英文路径（如 `D:\idphoto\`）。
+3. 进入解压后的文件夹，双击 **`证件照制作工具.exe`** 即可运行（无需安装，无弹窗广告）。
+4. 首次使用：进入 **设置 → 模型下载**，点击「一键检查并下载」获取抠图模型（推荐 MODNet，约 25 MB）；下载完成后即可正常制作证件照。
+
+**系统要求**
+
+| 项目 | 要求 |
+| --- | --- |
+| 操作系统 | Windows 10 / 11（64 位） |
+| 内存 | 8 GB 及以上 |
+| 显卡 | 无要求，纯 CPU 运行 |
+| 其他 | 无需安装 Python / Node / 任何运行库（Win10/11 自带所需组件） |
+
+**注意事项**
+
+- ⚠️ 解压后文件夹里的 **`_internal` 子目录必须与 `证件照制作工具.exe` 保持在一起**（整个文件夹拷贝/移动，不要只拖 exe 出来），否则启动会报错。
+- ⚠️ 建议存放路径为**纯英文、无空格**目录，避免个别系统环境下的路径兼容问题。
+- 设置、日志与下载的模型默认保存在解压目录内，删除文件夹即完全卸载，不留注册表残留。
+- 如果模型下载缓慢，可在设置中切换下载源（镜像 / 原地址）。
 
 ---
 
@@ -335,6 +364,34 @@ idphoto_app/
 python test_all.py            # 统一测试入口
 python _smoke_qt.py           # Qt 冒烟测试（offscreen 下校验 UI 构建与核心链路）
 ```
+
+---
+
+## 📦 从源码打包为 exe（Windows）
+
+项目提供一键打包脚本，把 Python 源码打包成可双击运行的 Windows 可执行文件（基于 PyInstaller，单文件夹 + 无控制台窗口）。
+
+```bash
+# 1. 安装打包工具
+pip install pyinstaller
+
+# 2. 双击 build_exe.bat，或手动执行：
+python -m PyInstaller launcher.py ^
+  --name "证件照制作工具" ^
+  --windowed --onedir --noconfirm --clean ^
+  --add-data "model_download_config.json;." ^
+  --hidden-import onnxruntime ^
+  --collect-submodules ui --collect-submodules core ^
+  --collect-submodules qfluentwidgets --collect-data qfluentwidgets
+```
+
+- 产物位于 `dist/证件照制作工具/`，**整个文件夹**即为可分发包（约 260 MB，含 `_internal` 依赖）。
+- 打包策略为**体积换速度**：不使用 UPX 压缩（UPX 的 LZMA 压缩虽能把包压到 ~170 MB，但启动时需现场解压上百 MB 的 DLL，明显拖慢打开速度；不压缩则内存映射直接加载，秒开）。
+- `build_exe.bat` 在构建完成后会**自动剔除不影响启动与图像功能的无用 DLL**（cv2 的视频 FFmpeg 库 29 MB、软件 OpenGL 后备 20 MB、未使用的 QtQuick/Qml/Pdf/OpenGL 约 19 MB），共减重约 68 MB；如手动打包，可参照脚本末尾的 `del` 清单自行处理。
+- PyInstaller 6.x 的 onedir 产物中，依赖统一收纳在 `_internal` 子目录，主程序 `证件照制作工具.exe` 在顶层，直接双击即可。
+- 设置、日志、下载的模型会写入该目录下（可写），无需管理员权限。
+- 模型文件运行时通过「设置 → 模型下载」自动获取，**初始包不含模型**，因此体积小、下载后即用。
+- 可选功能 MTCNN 人脸检测：只要打包环境装了 `mtcnn-runtime`，`build_exe.bat` 会自动把它的代码与权重一并内置（`--hidden-import` + `--collect-data mtcnnruntime`）；未安装时该选项不可用（默认 RetinaFace 不受影响）。
 
 ---
 
