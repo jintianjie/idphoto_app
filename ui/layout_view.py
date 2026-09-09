@@ -189,7 +189,10 @@ class LayoutView(QWidget):
         # 用 setStretch 让两列等宽
         for i, (label, key, primary) in enumerate(export_buttons):
             btn = theme.block_button(
-                label, primary, None, lambda k=key: self.c.on_export(k))
+                label, primary, None,
+                # 注意：clicked 信号会附带 checked(bool) 位置参数，
+                # 第一个参数必须显式接住，否则会覆盖 k=key 导致导出类型变成 False
+                lambda checked=False, k=key: self.c.on_export(k))
             (btn_grid_top if i < 2 else btn_grid_bot).addWidget(btn, 1)
         # 上下两行都拉满整行宽度，并加上更大的行间距
         card.addLayout(btn_grid_top)
