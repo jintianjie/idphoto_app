@@ -28,6 +28,11 @@ settings.json
 run_bat.log
 *.tmp
 
+# ---- 打包构建产物（build_exe.bat 生成）----
+build_log.txt
+build_exe_old.bat
+*.zip
+
 # ---- IDE / 编辑器 ----
 .vscode/
 .idea/

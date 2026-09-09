@@ -1038,17 +1038,21 @@ class SettingsDialog(QDialog):
             def _do_restart():
                 import os, sys, subprocess
                 # 用当前 python 解释器重新启动自身（保留命令行参数）
+                # 打包后 sys.argv[0] 已经是 exe 自身路径，再拼一次会变成
+                # [exe, exe]，等于把 exe 路径当作要打开的文件参数传进去；
+                # 源码运行时 sys.argv[0] 是脚本路径，必须保留。
+                _argv = sys.argv[1:] if getattr(sys, "frozen", False) else sys.argv
                 # PDETACH 在 Windows 上让子进程脱离父进程，避免被连带杀掉
                 if sys.platform == "win32":
                     creationflags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
                     subprocess.Popen(
-                        [sys.executable] + sys.argv,
+                        [sys.executable] + _argv,
                         cwd=os.getcwd(),
                         creationflags=creationflags,
                         start_new_session=True,
                     )
                 else:
-                    os.execv(sys.executable, [sys.executable] + sys.argv)
+                    os.execv(sys.executable, [sys.executable] + _argv)
                 QApplication.instance().quit()
 
             _restart_timer = QTimer(ctrl)

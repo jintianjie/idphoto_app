@@ -60,7 +60,33 @@ from core.settings_store import SettingsStore, DEFAULT_SETTINGS, get_default_set
 from core.mirror_manager import MirrorManager
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_MODEL_DIR = os.path.join(_BASE_DIR, "model")
+
+
+def _resolve_data_dir() -> str:
+    """「用户可写数据」的根目录：设置 JSON 与模型下载目录。
+
+    源码运行时就是项目根目录，行为与改动前完全一致。
+
+    打包运行（PyInstaller frozen）时切到 %LOCALAPPDATA%\\证件照制作工具：
+    因为打包后 _BASE_DIR 指向 dist\\...\\_internal，有两个硬伤——
+      1. 装到 Program Files 时该目录不可写，设置存不下、模型也下不了；
+      2. 每次重新打包都会清空 _internal，用户已下载的模型跟着丢失。
+    只有读写用户数据的地方走这里；随程序分发的只读配置
+    （如 model_download_config.json）仍用 _BASE_DIR。
+    """
+    if getattr(sys, "frozen", False):
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        d = os.path.join(base, "证件照制作工具")
+        try:
+            os.makedirs(d, exist_ok=True)
+            return d
+        except OSError:
+            return _BASE_DIR
+    return _BASE_DIR
+
+
+_DATA_DIR = _resolve_data_dir()
+DEFAULT_MODEL_DIR = os.path.join(_DATA_DIR, "model")
 
 # ============================================================
 #  主线程回调调度器
@@ -206,7 +232,8 @@ class IDPhotoApp(QMainWindow):
         self.photo_processor = PhotoProcessor(self.engine_manager)
 
         # ===== 设置 + 镜像源（本地 JSON） =====
-        self._settings = SettingsStore(get_default_settings_path(_BASE_DIR), DEFAULT_SETTINGS)
+        # 设置写用户数据目录；镜像配置是随程序分发的只读文件，仍从 _BASE_DIR 读
+        self._settings = SettingsStore(get_default_settings_path(_DATA_DIR), DEFAULT_SETTINGS)
         self._mirror_mgr = MirrorManager(_BASE_DIR)
 
         # 用持久化设置（主题模式 / 强调色 / 默认模型）点亮界面，必须在构建控件前调用

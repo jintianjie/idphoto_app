@@ -369,29 +369,52 @@ python _smoke_qt.py           # Qt 冒烟测试（offscreen 下校验 UI 构建�
 
 ## 📦 从源码打包为 exe（Windows）
 
-项目提供一键打包脚本，把 Python 源码打包成可双击运行的 Windows 可执行文件（基于 PyInstaller，单文件夹 + 无控制台窗口）。
+项目提供一键打包脚本 `build_exe.bat`（PyInstaller，onedir + 无控制台窗口）。双击即可，脚本会
+自动定位 Python、校验 PyInstaller 与依赖、清理缓存、打包、剔除冗余 DLL 并统计体积。
 
-```bash
-# 1. 安装打包工具
-pip install pyinstaller
-
-# 2. 双击 build_exe.bat，或手动执行：
-python -m PyInstaller launcher.py ^
-  --name "证件照制作工具" ^
-  --windowed --onedir --noconfirm --clean ^
-  --add-data "model_download_config.json;." ^
-  --hidden-import onnxruntime ^
-  --collect-submodules ui --collect-submodules core ^
-  --collect-submodules qfluentwidgets --collect-data qfluentwidgets
+```bat
+build_exe.bat              完整流程（推荐）
+build_exe.bat /nodeps      跳过依赖检查（依赖已就绪时更快）
+build_exe.bat /noslim      跳过 DLL 瘦身
+build_exe.bat /zip         额外压缩为 dist\证件照制作工具_日期.zip
+build_exe.bat /smoke       打包后试启动 8 秒，验证 exe 能否存活
+build_exe.bat /console     生成带控制台的版本（排错用）
+build_exe.bat /nopause     结束时不暂停（自动化 / CI）
+build_exe.bat /upx         用 UPX 压缩大文件（需自备 upx.exe）
+build_exe.bat /clean       只清理构建缓存
 ```
 
-- 产物位于 `dist/证件照制作工具/`，**整个文件夹**即为可分发包（约 260 MB，含 `_internal` 依赖）。
-- 打包策略为**体积换速度**：不使用 UPX 压缩（UPX 的 LZMA 压缩虽能把包压到 ~170 MB，但启动时需现场解压上百 MB 的 DLL，明显拖慢打开速度；不压缩则内存映射直接加载，秒开）。
-- `build_exe.bat` 在构建完成后会**自动剔除不影响启动与图像功能的无用 DLL**（cv2 的视频 FFmpeg 库 29 MB、软件 OpenGL 后备 20 MB、未使用的 QtQuick/Qml/Pdf/OpenGL 约 19 MB），共减重约 68 MB；如手动打包，可参照脚本末尾的 `del` 清单自行处理。
-- PyInstaller 6.x 的 onedir 产物中，依赖统一收纳在 `_internal` 子目录，主程序 `证件照制作工具.exe` 在顶层，直接双击即可。
-- 设置、日志、下载的模型会写入该目录下（可写），无需管理员权限。
-- 模型文件运行时通过「设置 → 模型下载」自动获取，**初始包不含模型**，因此体积小、下载后即用。
-- 可选功能 MTCNN 人脸检测：只要打包环境装了 `mtcnn-runtime`，`build_exe.bat` 会自动把它的代码与权重一并内置（`--hidden-import` + `--collect-data mtcnnruntime`）；未安装时该选项不可用（默认 RetinaFace 不受影响）。
+**体积对照**
+
+| 方式 | 体积 | 说明 |
+| --- | --- | --- |
+| 默认 | 225.8 MB | 稳妥版，不加壳 |
+| `/upx` | 119.9 MB | 主要压 `cv2.pyd`（82.3 → 20.3 MB）与 numpy OpenBLAS |
+
+> `/upx` 默认关闭：部分杀软对加壳文件会误报，是否启用请自行权衡。
+> 实测开启后窗口出现耗时 0.53 秒，启动并无明显变慢；需要时把 `upx.exe` 放到脚本同目录或加入 PATH。
+> 打包耗时：默认约 60 秒，开启 `/upx` 约 120 秒。
+
+**产物结构**：`dist\证件照制作工具\`，主程序在顶层，依赖统一收纳在 `_internal\`。整个文件夹即为可分发包，双击 `证件照制作工具.exe` 即可运行。
+
+**数据存放位置（重要）**
+
+| 运行方式 | 设置 / 模型 / 日志 |
+| --- | --- |
+| 源码运行（`python launcher.py`） | 项目根目录：`settings.json`、`model\`、`run_bat.log` |
+| 打包运行 | `%LOCALAPPDATA%\证件照制作工具\` |
+
+打包版不写程序目录是有原因的：程序若装在 Program Files，该目录无写权限，会导致设置存不下、
+模型下载不了；且每次重新打包都会清空 `_internal`，已下载的模型会跟着丢失。
+随程序分发的只读配置（`model_download_config.json`）仍留在程序目录内。
+
+**自动剔除**：打包后会删掉不影响启动与图像功能的冗余文件——cv2 的视频 FFmpeg 库、软件 OpenGL 后备、
+未使用的 Qt Quick / Qml / Pdf / Multimedia / 虚拟键盘、Qt 自带翻译文件、Pillow 的 AVIF 插件等，
+相比不瘦身约减重 36 MB（`/noslim` 可关闭）。
+
+- 初始包**不含模型**，首次使用通过「设置 → 模型下载」获取，因此包体积小、下载后即用。
+- 可选功能 MTCNN 人脸检测：打包环境装了 `mtcnn-runtime` 时会自动带上代码与权重；未安装则该选项不可用（默认 RetinaFace 不受影响）。
+- 同时提供 `证件照制作工具.spec`，参数与 `build_exe.bat` 一致，便于 CI 或手工微调（`pyinstaller 证件照制作工具.spec`）。
 
 ---
 

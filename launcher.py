@@ -24,6 +24,25 @@ import traceback
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _BASE_DIR)
 
+
+def _log_path() -> str:
+    """启动失败日志的落盘位置。
+
+    源码运行时就在项目根（run_bat.log），与改动前一致。
+    打包运行时 _BASE_DIR 指向 _internal，装到 Program Files 时不可写，
+    会静默丢掉排错最关键的异常堆栈，因此改到 %LOCALAPPDATA%。
+    """
+    name = "run_bat.log"
+    if getattr(sys, "frozen", False):
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        d = os.path.join(base, "证件照制作工具")
+        try:
+            os.makedirs(d, exist_ok=True)
+            return os.path.join(d, name)
+        except OSError:
+            return os.path.join(_BASE_DIR, name)
+    return os.path.join(_BASE_DIR, name)
+
 from PySide6.QtWidgets import QApplication, QMessageBox
 from ui.splash import StartupSplash
 
@@ -88,7 +107,7 @@ def main():
         splash.close()
         detail = traceback.format_exc()
         try:
-            with open(os.path.join(_BASE_DIR, "run_bat.log"), "a",
+            with open(_log_path(), "a",
                       encoding="utf-8") as f:
                 f.write("\n[LAUNCH FAILED]\n" + detail + "\n")
         except Exception:

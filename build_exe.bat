@@ -1,20 +1,172 @@
 @echo off
 chcp 936 >nul
-title æ‰“åŒ… idphoto_app -> exe
+setlocal EnableDelayedExpansion
+title ´ò°ü Ö¤¼þÕÕÖÆ×÷¹¤¾ß -^> dist
 cd /d "%~dp0"
 
-set "PY=C:\Users\plasx520\.workbuddy\binaries\python\envs\idphoto\Scripts\python.exe"
+REM ============================================================
+REM  Ö¤¼þÕÕÖÆ×÷¹¤¾ß - Ò»¼ü´ò°ü½Å±¾ (PyInstaller onedir)
+REM ------------------------------------------------------------
+REM  ÓÃ·¨£¨²ÎÊý¿É×éºÏ£¬Ë³ÐòÈÎÒâ£©£º
+REM    build_exe.bat            ÍêÕûÁ÷³Ì£º¶¨Î»Python -^> Ð£ÑéÒÀÀµ -^> ´ò°ü -^> ÊÝÉí -^> Ìå»ý±¨¸æ
+REM    build_exe.bat /nodeps    Ìø¹ýÒÀÀµ¼ì²éÓë°²×°£¨ÒÀÀµÒÑ¾ÍÐ÷Ê±¿ÉÊ¡¼¸Ê®Ãë£©
+REM    build_exe.bat /noslim    Ìø¹ý DLL ÊÝÉí£¨±£Áô opengl/ffmpeg µÈ£©
+REM    build_exe.bat /zip       ´ò°üÍê³Éºó¶îÍâÑ¹Ëõ³É dist\Ö¤¼þÕÕÖÆ×÷¹¤¾ß_ÈÕÆÚ.zip
+REM    build_exe.bat /upx       ¶îÍâÓÃ UPX Ñ¹Ëõ cv2.pyd µÈ´óÎÄ¼þ£¨Ìå»ýÔÙ½µÔ¼ 75MB£¬
+REM                             ´ú¼ÛÊÇÆô¶¯Ê±ÏÖ³¡½âÑ¹ + ¸ö±ðÉ±ÈíÎó±¨£»Ðè×Ô±¸ upx.exe£©
+REM    build_exe.bat /smoke     ´ò°üºó×Ô¶¯ÊÔÆô¶¯ 8 Ãë£¬ÑéÖ¤ exe ÄÜ·ñ´æ»î
+REM    build_exe.bat /nopause   ½áÊøÊ±²»ÔÝÍ££¨×Ô¶¯»¯ / CI ³¡¾°£©
+REM    build_exe.bat /console   Éú³É´ø¿ØÖÆÌ¨µÄ°æ±¾£¨ÅÅ´íÓÃ£¬Ä¬ÈÏÊÇ´°¿Ú³ÌÐò£©
+REM    build_exe.bat /clean     Ö»ÇåÀí build/dist »º´æºóÍË³ö
+REM
+REM  ²úÎï£ºdist\Ö¤¼þÕÕÖÆ×÷¹¤¾ß\Ö¤¼þÕÕÖÆ×÷¹¤¾ß.exe
+REM  ÈÕÖ¾£ºbuild_log.txt£¨½ö¼ÇÂ¼ pip °²×°Óë¹Ø¼ü²½Öè£©
+REM ============================================================
 
-REM å…¥å£ç”¨ launcher.pyï¼ˆå¸¦å¯åŠ¨é¡µï¼Œä¸Ž run.bat ä¸€è‡´ï¼‰
-REM ç­–ç•¥ï¼šä¸ç”¨ UPX åŽ‹ç¼© â€”â€” UPX(--lzma) å¯åŠ¨æ—¶è¦çŽ°åœºè§£åŽ‹ä¸Šç™¾ MB çš„ DLLï¼Œæ˜Žæ˜¾æ‹–æ…¢æ‰“å¼€é€Ÿåº¦ï¼›
-REM ä¸åŽ‹ç¼©åˆ™å†…å­˜æ˜ å°„ç›´æŽ¥åŠ è½½ã€ç§’å¼€ã€‚ä½“ç§¯é  --exclude-module + æ‰“åŒ…åŽè‡ªåŠ¨å‰”é™¤æ— ç”¨ DLL æŽ§åˆ¶ã€‚
-REM --exclude-module å‰”é™¤éžå¿…éœ€çš„ PySide6 å­æ¨¡å—ï¼ˆqfluentwidgets åªç”¨ Core/Gui/Widgets/Svg/Multimedia/Xmlï¼‰
-"%PY%" -m PyInstaller launcher.py ^
-  --name "è¯ä»¶ç…§åˆ¶ä½œå·¥å…·" ^
-  --windowed ^
+set "LOG=%~dp0build_log.txt"
+set "APPNAME=Ö¤¼þÕÕÖÆ×÷¹¤¾ß"
+set "ENTRY=launcher.py"
+set "OUTDIR=dist\%APPNAME%"
+
+set "DO_DEPS=1"
+set "DO_SLIM=1"
+set "DO_ZIP=0"
+set "DO_SMOKE=0"
+set "USE_CONSOLE=0"
+set "CLEAN_ONLY=0"
+set "DO_PAUSE=1"
+set "DO_UPX=0"
+
+for %%A in (%*) do (
+    if /i "%%A"=="/nodeps"  set "DO_DEPS=0"
+    if /i "%%A"=="/noslim"  set "DO_SLIM=0"
+    if /i "%%A"=="/zip"     set "DO_ZIP=1"
+    if /i "%%A"=="/smoke"   set "DO_SMOKE=1"
+    if /i "%%A"=="/console" set "USE_CONSOLE=1"
+    if /i "%%A"=="/clean"   set "CLEAN_ONLY=1"
+    if /i "%%A"=="/nopause" set "DO_PAUSE=0"
+    if /i "%%A"=="/upx"     set "DO_UPX=1"
+    if /i "%%A"=="/?"       goto :usage
+    if /i "%%A"=="/help"    goto :usage
+)
+
+echo ============================================================
+echo   Ö¤¼þÕÕÖÆ×÷¹¤¾ß ´ò°ü½Å±¾
+echo ============================================================
+echo [%date% %time%] === ´ò°ü¿ªÊ¼ === > "%LOG%"
+
+REM ------------------------------------------------------------
+REM  ²½Öè 0£º¶¨Î» Python ½âÊÍÆ÷
+REM  ÓÅÏÈ¼¶£ºÏîÄ¿ÄÚ .venv ^> ÒÑÖª idphoto »·¾³ ^> py Æô¶¯Æ÷ ^> python
+REM ------------------------------------------------------------
+set "PY="
+if exist "%~dp0.venv\Scripts\python.exe" (
+    set "PY=%~dp0.venv\Scripts\python.exe"
+    goto :py_ok
+)
+if exist "C:\Users\plasx520\.workbuddy\binaries\python\envs\idphoto\Scripts\python.exe" (
+    set "PY=C:\Users\plasx520\.workbuddy\binaries\python\envs\idphoto\Scripts\python.exe"
+    goto :py_ok
+)
+where py >nul 2>&1
+if not errorlevel 1 (
+    set "PY=py"
+    goto :py_ok
+)
+where python >nul 2>&1
+if not errorlevel 1 (
+    set "PY=python"
+    goto :py_ok
+)
+
+echo [´íÎó] Î´ÕÒµ½ Python ½âÊÍÆ÷£¬Çë°²×° Python 3.9+ ²¢¹´Ñ¡ Add to PATH¡£
+echo [´íÎó] Python not found. >> "%LOG%"
+goto :fail
+
+:py_ok
+echo [0/6] Python: %PY%
+"%PY%" -c "import sys;print(sys.version)" >> "%LOG%" 2>&1
+if errorlevel 1 (
+    echo [´íÎó] Python ÎÞ·¨Ö´ÐÐ£º%PY%
+    goto :fail
+)
+
+REM ------------------------------------------------------------
+REM  ²½Öè 1£ºÐ£Ñé PyInstaller£¬È±Ê§Ôò×Ô¶¯°²×°£¨º¬¹úÄÚ¾µÏñ»ØÍË£©
+REM ------------------------------------------------------------
+echo [1/6] Ð£Ñé PyInstaller...
+"%PY%" -c "import PyInstaller" >nul 2>&1
+if errorlevel 1 (
+    echo      Î´°²×°£¬ÕýÔÚ×Ô¶¯°²×° PyInstaller...
+    call :pip_install pyinstaller
+    if errorlevel 1 (
+        echo [´íÎó] PyInstaller °²×°Ê§°Ü£¬ÏêÇé¼û build_log.txt
+        goto :fail
+    )
+)
+REM ËµÃ÷£º²»ÓÃ for /f È¡°æ±¾ ¡ª¡ª for /f µÄÃüÁî´®ÒÔÒýºÅ¿ªÍ·Ê±»á±» cmd ²ð»µ£¬
+REM       ¸ÄÎªÐ´ÈëÁÙÊ±ÎÄ¼þÔÙ set /p ¶ÁÈ¡£¬ÖÐÎÄÂ·¾¶Óëº¬·ÖºÅµÄ -c ´úÂë¶¼°²È«¡£
+set "PYI_VER=Î´Öª"
+"%PY%" -c "import PyInstaller,sys;sys.stdout.write(PyInstaller.__version__)" > "%TEMP%\idp_pyiver.tmp" 2>nul
+if exist "%TEMP%\idp_pyiver.tmp" set /p PYI_VER=<"%TEMP%\idp_pyiver.tmp"
+if exist "%TEMP%\idp_pyiver.tmp" del /q "%TEMP%\idp_pyiver.tmp" >nul 2>&1
+echo      PyInstaller %PYI_VER% ¾ÍÐ÷
+
+REM ------------------------------------------------------------
+REM  ²½Öè 2£ºÒÀÀµ×Ô¼ì£¨Ä¬ÈÏ¿ªÆô£¬/nodeps ¿ÉÌø¹ý£©
+REM ------------------------------------------------------------
+if "%DO_DEPS%"=="0" goto :deps_skip
+echo [2/6] Ð£ÑéÏîÄ¿ÒÀÀµ...
+set "DEPS=PySide6 qfluentwidgets numpy cv2 PIL onnxruntime"
+"%PY%" -c "import importlib.util as u,os,sys;m=[n for n in os.environ['DEPS'].split() if u.find_spec(n) is None];sys.stdout.write('      È±Ê§: '+','.join(m)+'\n') if m else None;sys.exit(1 if m else 0)"
+if errorlevel 1 (
+    echo      ³¢ÊÔ°´ requirements.txt °²×°...
+    call :pip_install_file requirements.txt
+    "%PY%" -c "import importlib.util as u,os,sys;m=[n for n in os.environ['DEPS'].split() if u.find_spec(n) is None];sys.exit(1 if m else 0)" >nul 2>&1
+    if errorlevel 1 (
+        echo [´íÎó] ÒÀÀµÈÔ²»ÍêÕû£¬ÇëÊÖ¶¯Ö´ÐÐ£º
+        echo        "%PY%" -m pip install -r requirements.txt
+        goto :fail
+    )
+)
+echo      ÒÀÀµÍêÕû
+:deps_skip
+
+REM ------------------------------------------------------------
+REM  ²½Öè 3£ºÇåÀí¾É¹¹½¨£¨±£Ö¤²úÎï¸É¾»£¬±ÜÃâ DLL ²ÐÁô£©
+REM ------------------------------------------------------------
+echo [3/6] ÇåÀí¾É¹¹½¨»º´æ...
+if exist "%~dp0build" rmdir /s /q "%~dp0build"
+if exist "%~dp0dist\%APPNAME%" rmdir /s /q "%~dp0dist\%APPNAME%"
+echo      ÒÑÇåÀí build\ Óë dist\%APPNAME%\
+if "%CLEAN_ONLY%"=="1" (
+    echo.
+    echo [Íê³É] ÒÑ°´ /clean ²ÎÊý½öÖ´ÐÐÇåÀí¡£
+    goto :done_silent
+)
+
+REM ------------------------------------------------------------
+REM  ²½Öè 4£ºPyInstaller ´ò°ü
+REM  ²ßÂÔËµÃ÷£º
+REM    - ²»ÆôÓÃ UPX£ºÉÏ°Ù MB µÄ DLL ÏÖ³¡½âÑ¹»áÃ÷ÏÔÍÏÂýÆô¶¯£¬
+REM      Ìå»ý¸ÄÓÉ --exclude-module Óë´ò°üºóÊÝÉí¿ØÖÆ¡£
+REM    - Ö»±£Áô³ÌÐòÊµ¼ÊÓÃµ½µÄ Qt Ä£¿é£¬ÌÞ³ý 3D/Qml/Charts/WebEngine µÈ¡£
+REM ------------------------------------------------------------
+echo [4/6] ÕýÔÚ´ò°ü£¨ÊÓ»úÆ÷ÐÔÄÜÔ¼ 2-6 ·ÖÖÓ£©...
+
+set "MODE_OPT=--windowed"
+if "%USE_CONSOLE%"=="1" set "MODE_OPT=--console"
+
+set "ICON_OPT="
+if exist "%~dp0icon.ico" set ICON_OPT=--icon "%~dp0icon.ico"
+
+"%PY%" -m PyInstaller %ENTRY% ^
+  --name "%APPNAME%" ^
   --onedir ^
   --noconfirm ^
   --clean ^
+  %MODE_OPT% ^
+  %ICON_OPT% ^
   --add-data "model_download_config.json;." ^
   --hidden-import onnxruntime ^
   --hidden-import mtcnnruntime ^
@@ -23,9 +175,11 @@ REM --exclude-module å‰”é™¤éžå¿…éœ€çš„ PySide6 å­æ¨¡å—ï¼ˆqfluentwidgets åªç”
   --collect-submodules qfluentwidgets ^
   --collect-data qfluentwidgets ^
   --collect-data mtcnnruntime ^
-  --exclude-module PySide6.QtQuick ^
-  --exclude-module PySide6.QtQml ^
-  --exclude-module PySide6.QtQuickWidgets ^
+  --exclude-module PySide6.QtQuick --exclude-module PySide6.QtQml ^
+  --exclude-module PySide6.QtQuickWidgets --exclude-module PySide6.QtQuickControls2 ^
+  --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtWebEngineWidgets ^
+  --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtMultimediaWidgets ^
+  --exclude-module qfluentwidgets.multimedia ^
   --exclude-module PySide6.Qt3DAnimation --exclude-module PySide6.Qt3DCore ^
   --exclude-module PySide6.Qt3DExtras --exclude-module PySide6.Qt3DInput ^
   --exclude-module PySide6.Qt3DLogic --exclude-module PySide6.Qt3DRender ^
@@ -34,31 +188,203 @@ REM --exclude-module å‰”é™¤éžå¿…éœ€çš„ PySide6 å­æ¨¡å—ï¼ˆqfluentwidgets åªç”
   --exclude-module PySide6.QtPositioning --exclude-module PySide6.QtLocation ^
   --exclude-module PySide6.QtSensors --exclude-module PySide6.QtSerialPort ^
   --exclude-module PySide6.QtWebChannel --exclude-module PySide6.QtWebSockets ^
-  --exclude-module PySide6.QtTextToSpeech --exclude-module PySide6.QtHelp ^
-  --exclude-module PySide6.QtPdf --exclude-module PySide6.QtPdfWidgets ^
-  --exclude-module PySide6.QtOpenGL --exclude-module PySide6.QtOpenGLWidgets ^
-  --exclude-module PySide6.QtScxml --exclude-module PySide6.QtStateMachine ^
-  --exclude-module PySide6.QtVirtualKeyboard --exclude-module PySide6.QtRemoteObjects ^
-  --exclude-module PySide6.QtUiTools --exclude-module PySide6.QtDesigner ^
-  --exclude-module PySide6.QtAxContainer --exclude-module PySide6.QtNfc ^
-  --exclude-module PySide6.QtSpatialAudio --exclude-module PySide6.QtMultimediaQuick ^
-  --exclude-module PySide6.QtGrpc --exclude-module PySide6.QtHttpServer ^
-  --exclude-module PySide6.QtNetworkAuth --exclude-module PySide6.QtWebView
+  --exclude-module PySide6.QtWebView --exclude-module PySide6.QtTextToSpeech ^
+  --exclude-module PySide6.QtHelp --exclude-module PySide6.QtPdf ^
+  --exclude-module PySide6.QtPdfWidgets --exclude-module PySide6.QtOpenGL ^
+  --exclude-module PySide6.QtOpenGLWidgets --exclude-module PySide6.QtScxml ^
+  --exclude-module PySide6.QtStateMachine --exclude-module PySide6.QtVirtualKeyboard ^
+  --exclude-module PySide6.QtRemoteObjects --exclude-module PySide6.QtUiTools ^
+  --exclude-module PySide6.QtDesigner --exclude-module PySide6.QtAxContainer ^
+  --exclude-module PySide6.QtNfc --exclude-module PySide6.QtSpatialAudio ^
+  --exclude-module PySide6.QtMultimediaQuick --exclude-module PySide6.QtGrpc ^
+  --exclude-module PySide6.QtHttpServer --exclude-module PySide6.QtNetworkAuth ^
+  --exclude-module matplotlib --exclude-module scipy --exclude-module pandas ^
+  --exclude-module IPython --exclude-module jupyter --exclude-module notebook ^
+  --exclude-module sklearn --exclude-module torch --exclude-module tensorflow ^
+  --exclude-module pytest --exclude-module PIL.ImageQt
 
+if errorlevel 1 (
+    echo.
+    echo [´íÎó] PyInstaller ¹¹½¨Ê§°Ü¡£
+    goto :fail
+)
+
+if not exist "%OUTDIR%\%APPNAME%.exe" (
+    echo [´íÎó] Î´ÕÒµ½²úÎï£º%OUTDIR%\%APPNAME%.exe
+    goto :fail
+)
+echo      ¹¹½¨³É¹¦£º%OUTDIR%\%APPNAME%.exe
+
+REM ------------------------------------------------------------
+REM  ²½Öè 5£ºÊÝÉí ¡ª¡ª ÌÞ³ýÈ·ÊµÓÃ²»µ½µÄ DLL
+REM  £¨ffmpeg ÊÓÆµ¶ÁÐ´ / Èí¼þ OpenGL / Î´Ê¹ÓÃµÄ Qt ×ÓÄ£¿é£©
+REM  ÕâÐ©ÎÄ¼þÉ¾³ýºó²»Ó°ÏìÆô¶¯¡¢¿ÙÍ¼¡¢»»µ×ÓëÅÅ°æ¡£
+REM ------------------------------------------------------------
+if "%DO_SLIM%"=="0" goto :slim_skip
+echo [5/6] ÊÝÉíÖÐ...
+set "SLIM=%OUTDIR%\_internal"
+set "DROP_FILES=cv2\opencv_videoio_ffmpeg500_64.dll cv2\opencv_videoio_ffmpeg501_64.dll cv2\opencv_videoio_ffmpeg502_64.dll PySide6\opengl32sw.dll PySide6\Qt6VirtualKeyboard.dll PySide6\Qt6Quick.dll PySide6\Qt6QuickControls2.dll PySide6\Qt6QuickWidgets.dll PySide6\Qt6Qml.dll PySide6\Qt6QmlMeta.dll PySide6\Qt6QmlModels.dll PySide6\Qt6QmlWorkerScript.dll PySide6\Qt6Pdf.dll PySide6\Qt6PdfWidgets.dll PySide6\Qt6OpenGL.dll PySide6\Qt6OpenGLWidgets.dll PySide6\Qt6Multimedia.dll PySide6\Qt6MultimediaWidgets.dll PySide6\QtMultimedia.pyd PySide6\QtMultimediaWidgets.pyd PySide6\avcodec-61.dll PySide6\avformat-61.dll PySide6\avutil-59.dll PySide6\swresample-5.dll PySide6\swscale-8.dll PIL\_avif.cp313-win_amd64.pyd PIL\_imagingtk.cp313-win_amd64.pyd"
+set "DROP_N=0"
+for %%F in (%DROP_FILES%) do (
+    if exist "%SLIM%\%%F" (
+        del /q "%SLIM%\%%F" >nul 2>&1
+        echo      ÌÞ³ý %%F
+        set /a DROP_N+=1
+    )
+)
+del /q "%SLIM%\PySide6\Qt6Quick*.dll" >nul 2>&1
+del /q "%SLIM%\PySide6\Qt6Qml*.dll" >nul 2>&1
+del /q "%SLIM%\PySide6\Qt6Pdf*.dll" >nul 2>&1
+REM Qt ×Ô´øµÄ 96 ¸ö·­ÒëÎÄ¼þ£¨Ô¼ 6.4MB£©£ºÏîÄ¿Ã»ÓÃ QTranslator£¬qfluentwidgets Ò²²»´ø .qm£¬
+REM Î´ÏÔÊ½¼ÓÔØ·­ÒëÊ±ÕâÐ©ÎÄ¼þ±¾¾Í²»ÉúÐ§£¬´¿ÊôÈßÓà¡£
+if exist "%SLIM%\PySide6\translations" (
+    rmdir /s /q "%SLIM%\PySide6\translations" >nul 2>&1
+    echo      ÌÞ³ý PySide6\translations\ £¨Qt ·­ÒëÎÄ¼þ£¬Î´Ê¹ÓÃ£©
+)
+echo      ¹²ÌÞ³ý %DROP_N% ¸öÎÄ¼þ
+:slim_skip
+
+REM ------------------------------------------------------------
+REM  ¿ÉÑ¡£ºUPX Ñ¹Ëõ×î´óµÄ¼¸¸ö DLL£¨/upx£¬Ä¬ÈÏ¹Ø±Õ£©
+REM  Êµ²â cv2.pyd 82.3MB -> 20.0MB£¨Ê¡ 76%£©£¬µ«Æô¶¯Ê±ÐèÏÖ³¡½âÑ¹£¬
+REM  ÇÒ²¿·ÖÉ±Èí¶Ô UPX ¼Ó¿ÇÎÄ¼þÎó±¨£¬¹ÊÄ¬ÈÏ²»×ö£¬°´Ðè¿ªÆô¡£
+REM  Ö»¶Ô"×î´óµÄÁ½¸ö"ÏÂÊÖ£ºcv2.pyd Óë numpy µÄ OpenBLAS£¬
+REM  ÊÕÒæÕ¼¾ø´ó²¿·Ö£¬½âÑ¹¿ªÏú¿É¿Ø£¨Ô¼ 0.5-1 Ãë£©¡£
+REM ------------------------------------------------------------
+if "%DO_UPX%"=="0" goto :upx_skip
+echo [¿ÉÑ¡] UPX Ñ¹Ëõ´óÎÄ¼þ...
+set "UPX_EXE="
+if exist "%~dp0upx.exe" set "UPX_EXE=%~dp0upx.exe"
+if not defined UPX_EXE (
+    for /f "tokens=*" %%U in ('where upx 2^>nul') do if not defined UPX_EXE set "UPX_EXE=%%U"
+)
+if not defined UPX_EXE (
+    echo      Î´ÕÒµ½ upx.exe£¬ÒÑÌø¹ý£¨·Åµ½½Å±¾Í¬Ä¿Â¼»ò¼ÓÈë PATH ºóÖØÊÔ£©
+    goto :upx_skip
+)
+echo      Ê¹ÓÃ£º%UPX_EXE%
+if exist "%SLIM%\cv2\cv2.pyd" (
+    "%UPX_EXE%" --best --lzma "%SLIM%\cv2\cv2.pyd" >nul 2>&1
+    echo      ÒÑÑ¹Ëõ cv2\cv2.pyd
+)
+for %%F in ("%SLIM%\numpy.libs\*.dll") do (
+    "%UPX_EXE%" --best --lzma "%%~fF" >nul 2>&1
+    echo      ÒÑÑ¹Ëõ numpy.libs\%%~nxF
+)
+:upx_skip
+
+REM ------------------------------------------------------------
+REM  ²½Öè 6£ºÌå»ý±¨¸æ
+REM ------------------------------------------------------------
+echo [6/6] Í³¼ÆÌå»ý...
+set "PDIR=%~dp0%OUTDIR%"
+set "SIZE_MB=Î´Öª"
+set "SZ_TMP=%TEMP%\idp_size.tmp"
+if exist "%SZ_TMP%" del /q "%SZ_TMP%" >nul 2>&1
+"%PY%" -c "import os,sys;t=sum(os.path.getsize(os.path.join(r,f)) for r,_d,_fs in os.walk(sys.argv[1]) for f in _fs);sys.stdout.write(str(round(t/1048576,1)))" "%PDIR%" > "%SZ_TMP%" 2>nul
+if exist "%SZ_TMP%" set /p SIZE_MB=<"%SZ_TMP%"
+if exist "%SZ_TMP%" del /q "%SZ_TMP%" >nul 2>&1
+echo      ²úÎïÌå»ý£º%SIZE_MB% MB
+
+REM ------------------------------------------------------------
+REM  ¿ÉÑ¡£ºÃ°ÑÌÆô¶¯ÑéÖ¤£¨/smoke£©
+REM ------------------------------------------------------------
+if "%DO_SMOKE%"=="0" goto :smoke_skip
 echo.
-echo æž„å»ºå®Œæˆï¼šdist\è¯ä»¶ç…§åˆ¶ä½œå·¥å…·\è¯ä»¶ç…§åˆ¶ä½œå·¥å…·.exe
-echo æ­£åœ¨è‡ªåŠ¨ç˜¦èº«ï¼ˆå‰”é™¤è§†é¢‘/è½¯ä»¶OpenGL/æœªç”¨Qt çš„ DLLï¼Œä¸å½±å“å¯åŠ¨ä¸Žå›¾åƒåŠŸèƒ½ï¼‰...
+echo      Ã°ÑÌ²âÊÔ£ºÆô¶¯ exe ²¢¹Û²ì 8 Ãë...
+REM ÓÃ Python À­Æð²¢ÅÐ¶¨´æ»î£º
+REM   1) tasklist + findstr Æ¥ÅäÖÐÎÄ½ø³ÌÃûÔÚ²¿·Ö´úÂëÒ³ÏÂ»áÎóÅÐÎª"ÒÑÍË³ö"£»
+REM   2) ÕâÀïµÄµÈ´ý²»ÓÃ timeout ¡ª¡ª ×°ÁË Git for Windows µÄ»úÆ÷ÉÏ£¬PATH ÀïµÄ
+REM      GNU timeout »áÇÀÕ¼ Windows µÄ timeout.exe£¬±¨ "invalid time interval /t"£»
+REM   3) ÊÕÎ²ÓÉ Python Ö±½Ó kill£¬²»²ÐÁô´°¿Ú¡£
+"%PY%" -c "import subprocess,time,os,sys;p=subprocess.Popen(sys.argv[1],cwd=os.path.dirname(sys.argv[1]));time.sleep(8);a=p.poll() is None;p.kill() if a else None;sys.exit(0 if a else 1)" "%CD%\%OUTDIR%\%APPNAME%.exe"
+if errorlevel 1 (
+    echo [¾¯¸æ] ½ø³ÌÒÑÍË³ö£¬³ÌÐò¿ÉÄÜÆô¶¯Ê§°Ü£¨¿ÉÓÃ /console ÖØÐÂ´ò°ü¿´±¨´í£©
+) else (
+    echo      ½ø³Ì´æ»î£¬Ã°ÑÌÍ¨¹ý¡£
+)
+:smoke_skip
 
-set "SLIM=dist\è¯ä»¶ç…§åˆ¶ä½œå·¥å…·\_internal"
-del /q "%SLIM%\cv2\opencv_videoio_ffmpeg500_64.dll" 2>nul
-del /q "%SLIM%\PySide6\opengl32sw.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6Quick.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6Qml.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6QmlMeta.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6QmlModels.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6QmlWorkerScript.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6Pdf.dll" 2>nul
-del /q "%SLIM%\PySide6\Qt6OpenGL.dll" 2>nul
+REM ------------------------------------------------------------
+REM  ¿ÉÑ¡£ºÑ¹ËõÎª zip£¨/zip£©
+REM ------------------------------------------------------------
+if "%DO_ZIP%"=="0" goto :zip_skip
+echo.
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd"') do set "STAMP=%%D"
+set "ZSRC=%~dp0%OUTDIR%"
+set "ZDST=%~dp0dist\%APPNAME%_%STAMP%.zip"
+echo      ÕýÔÚÑ¹Ëõ£º%APPNAME%_%STAMP%.zip
+REM ÓÃ -LiteralPath ÕûÌå´ò°üÄ¿Â¼£ºÕâÑù zip ÄÚ±£Áô "Ö¤¼þÕÕÖÆ×÷¹¤¾ß\" ¶¥²ãÄ¿Â¼£¬
+REM ½âÑ¹ºóÊÇÒ»¸öÍêÕûÎÄ¼þ¼Ð£»Èô¸ÄÓÃ¹ÜµÀÖðÏî´«Èë£¬½âÑ¹»áµÃµ½Ò»µØÉ¢ÎÄ¼þ¡£
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -LiteralPath $env:ZSRC -DestinationPath $env:ZDST -CompressionLevel Optimal -Force"
+if exist "%ZDST%" (echo      Ñ¹ËõÍê³É) else (echo [¾¯¸æ] Ñ¹ËõÎ´Éú³ÉÎÄ¼þ)
+:zip_skip
 
-echo ç˜¦èº«å®Œæˆã€‚
-pause
+goto :done
+
+REM ============================================================
+REM  ×Ó³ÌÐò£º´ø¾µÏñ»ØÍËµÄ pip °²×°£¨°üÃûÐÎÊ½£©
+REM ============================================================
+:pip_install
+"%PY%" -m pip install %* >> "%LOG%" 2>&1
+if not errorlevel 1 exit /b 0
+echo      ¹Ù·½Ô´Ê§°Ü£¬³¢ÊÔÇå»ª¾µÏñ... >> "%LOG%"
+"%PY%" -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple %* >> "%LOG%" 2>&1
+if not errorlevel 1 exit /b 0
+echo      Çå»ª¾µÏñÊ§°Ü£¬³¢ÊÔ°¢ÀïÔÆ¾µÏñ... >> "%LOG%"
+"%PY%" -m pip install -i https://mirrors.aliyun.com/pypi/simple/ %* >> "%LOG%" 2>&1
+if not errorlevel 1 exit /b 0
+exit /b 1
+
+REM ============================================================
+REM  ×Ó³ÌÐò£º´ø¾µÏñ»ØÍËµÄ pip °²×°£¨-r ÎÄ¼þÐÎÊ½£©
+REM ============================================================
+:pip_install_file
+"%PY%" -m pip install -r %* >> "%LOG%" 2>&1
+if not errorlevel 1 exit /b 0
+"%PY%" -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r %* >> "%LOG%" 2>&1
+if not errorlevel 1 exit /b 0
+"%PY%" -m pip install -i https://mirrors.aliyun.com/pypi/simple/ -r %* >> "%LOG%" 2>&1
+if not errorlevel 1 exit /b 0
+exit /b 1
+
+REM ============================================================
+:usage
+echo.
+echo ÓÃ·¨£ºbuild_exe.bat [/nodeps] [/noslim] [/zip] [/smoke] [/console] [/clean]
+echo   /nodeps   Ìø¹ýÒÀÀµ¼ì²é°²×°
+echo   /noslim   Ìø¹ý DLL ÊÝÉí
+echo   /zip      ¶îÍâÑ¹ËõÎª zip
+echo   /smoke    ´ò°üºóÊÔÆô¶¯ 8 Ãë
+echo   /console  Éú³É´ø¿ØÖÆÌ¨°æ±¾£¨ÅÅ´í£©
+echo   /clean    Ö»ÇåÀí¹¹½¨»º´æ
+echo   /nopause  ½áÊøÊ±²»ÔÝÍ££¨×Ô¶¯»¯/CI ÓÃ£©
+echo   /upx      ÓÃ UPX Ñ¹Ëõ´óÎÄ¼þ£¨Ðè×Ô±¸ upx.exe£»Ìå»ýÔÙ½µÔ¼ 75MB£©
+echo.
+if "%DO_PAUSE%"=="1" pause
+exit /b 0
+
+REM ============================================================
+:done_silent
+echo.
+if "%DO_PAUSE%"=="1" pause
+exit /b 0
+
+:done
+echo.
+echo ============================================================
+echo   ´ò°üÍê³É
+echo   ²úÎï£º%OUTDIR%\%APPNAME%.exe
+echo   Ìå»ý£º%SIZE_MB% MB
+echo   ÌáÊ¾£º/console ¿ÉÉú³É´ø¿ØÖÆÌ¨°æ±¾ÓÃÓÚÅÅ´í
+echo ============================================================
+echo [%date% %time%] === ´ò°üÍê³É£¬Ìå»ý %SIZE_MB% MB === >> "%LOG%"
+if "%DO_PAUSE%"=="1" pause
+exit /b 0
+
+:fail
+echo.
+echo [Ê§°Ü] ´ò°üÎ´Íê³É£¬Çë¼ì²éÉÏ·½´íÎóÐÅÏ¢»ò build_log.txt
+echo [%date% %time%] === ´ò°üÊ§°Ü === >> "%LOG%"
+if "%DO_PAUSE%"=="1" pause
+exit /b 1
